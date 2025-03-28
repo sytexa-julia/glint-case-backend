@@ -1,3 +1,4 @@
+import os
 from contextlib import asynccontextmanager
 
 import xarray as xr
@@ -5,7 +6,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel
 from starlette.responses import JSONResponse
-
+from fastapi.middleware.cors import CORSMiddleware
 
 class WaveHeight(BaseModel):
     # req_latlng: Optional[Tuple[float,float]]
@@ -30,6 +31,19 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
+env_allow_origins = (os.getenv("CORS_ORIGINS", "")).split(sep=None, maxsplit=-1)
+env_allow_origins.extend([
+    "http://localhost",
+    "http://localhost:8080",
+])
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=env_allow_origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @app.get("/waves/max_height")
 async def max_height(lat: float, lng: float):
